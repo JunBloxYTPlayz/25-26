@@ -1,0 +1,189 @@
+-- 🎯 Gun Remote GUI v4 (Scrolling + Credits)
+-- Credits: SE EVICT
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Remote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("ShootGun")
+
+-- build args
+local function makeArgs(target)
+    return {
+        Vector3.new(-134.10047912597656, 179.37501525878906, -44.1585578918457),
+        Vector3.new(-189.5124053955078, 185.25442504882812, 36.506954193115234),
+        target.Character and target.Character:FindFirstChild("HumanoidRootPart"),
+        Vector3.new(-184.40765380859375, 185.13458251953125, 27.908870697021484)
+    }
+end
+
+-- gui
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game.CoreGui
+ScreenGui.ResetOnSpawn = false
+
+-- main frame
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 270, 0, 200)
+Frame.Position = UDim2.new(0.7, 0, 0.3, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Frame.Active = true
+Frame.Draggable = true
+Frame.Visible = true
+Frame.Parent = ScreenGui
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,12)
+
+-- scrolling frame
+local Scroll = Instance.new("ScrollingFrame")
+Scroll.Size = UDim2.new(1,0,1,-35)
+Scroll.Position = UDim2.new(0,0,0,35)
+Scroll.CanvasSize = UDim2.new(0,0,0,300)
+Scroll.ScrollBarThickness = 4
+Scroll.BackgroundTransparency = 1
+Scroll.Parent = Frame
+
+local UIListLayout = Instance.new("UIListLayout", Scroll)
+UIListLayout.Padding = UDim.new(0,10)
+UIListLayout.FillDirection = Enum.FillDirection.Vertical
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- title
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1,0,0,35)
+Title.BackgroundTransparency = 1
+Title.Text = "🎯 Gun Remote GUI v4"
+Title.TextColor3 = Color3.fromRGB(200,200,255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+Title.Parent = Frame
+
+-- target textbox
+local TargetBox = Instance.new("TextBox")
+TargetBox.Size = UDim2.new(1,-20,0,30)
+TargetBox.PlaceholderText = "Enter target (User/Display)"
+TargetBox.BackgroundColor3 = Color3.fromRGB(45,45,45)
+TargetBox.TextColor3 = Color3.new(1,1,1)
+TargetBox.Font = Enum.Font.Gotham
+TargetBox.TextSize = 14
+TargetBox.Parent = Scroll
+Instance.new("UICorner",TargetBox).CornerRadius = UDim.new(0,8)
+
+-- delay textbox
+local DelayBox = Instance.new("TextBox")
+DelayBox.Size = UDim2.new(1,-20,0,30)
+DelayBox.PlaceholderText = "Delay (seconds)"
+DelayBox.Text = "0.2"
+DelayBox.BackgroundColor3 = Color3.fromRGB(45,45,45)
+DelayBox.TextColor3 = Color3.new(1,1,1)
+DelayBox.Font = Enum.Font.Gotham
+DelayBox.TextSize = 14
+DelayBox.Parent = Scroll
+Instance.new("UICorner",DelayBox).CornerRadius = UDim.new(0,8)
+
+-- fire once button
+local FireBtn = Instance.new("TextButton")
+FireBtn.Size = UDim2.new(1,-20,0,30)
+FireBtn.Text = "🔥 Fire Once"
+FireBtn.BackgroundColor3 = Color3.fromRGB(100,150,250)
+FireBtn.TextColor3 = Color3.new(1,1,1)
+FireBtn.Font = Enum.Font.GothamBold
+FireBtn.TextSize = 14
+FireBtn.Parent = Scroll
+Instance.new("UICorner",FireBtn).CornerRadius = UDim.new(0,8)
+
+-- loop button
+local LoopBtn = Instance.new("TextButton")
+LoopBtn.Size = UDim2.new(1,-20,0,30)
+LoopBtn.Text = "🔁 Loop Fire: OFF"
+LoopBtn.BackgroundColor3 = Color3.fromRGB(80,80,80)
+LoopBtn.TextColor3 = Color3.new(1,1,1)
+LoopBtn.Font = Enum.Font.GothamBold
+LoopBtn.TextSize = 14
+LoopBtn.Parent = Scroll
+Instance.new("UICorner",LoopBtn).CornerRadius = UDim.new(0,8)
+
+-- mini toggle button
+local MiniBtn = Instance.new("TextButton")
+MiniBtn.Size = UDim2.new(0,50,0,50)
+MiniBtn.Position = UDim2.new(0,20,0.6,0)
+MiniBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+MiniBtn.Text = "⚙️"
+MiniBtn.TextColor3 = Color3.new(1,1,1)
+MiniBtn.Font = Enum.Font.GothamBold
+MiniBtn.TextSize = 20
+MiniBtn.Active = true
+MiniBtn.Draggable = true
+MiniBtn.Parent = ScreenGui
+Instance.new("UICorner",MiniBtn).CornerRadius = UDim.new(1,0)
+
+MiniBtn.MouseButton1Click:Connect(function()
+    Frame.Visible = not Frame.Visible
+end)
+
+-- notification credits
+local function notifyCredit()
+    local Note = Instance.new("TextLabel")
+    Note.Size = UDim2.new(0,200,0,40)
+    Note.Position = UDim2.new(1,-210,0,20)
+    Note.BackgroundColor3 = Color3.fromRGB(35,35,35)
+    Note.Text = "✅ Credits: SE EVICT"
+    Note.TextColor3 = Color3.new(1,1,1)
+    Note.Font = Enum.Font.GothamBold
+    Note.TextSize = 14
+    Note.Parent = ScreenGui
+    Instance.new("UICorner",Note).CornerRadius = UDim.new(0,10)
+
+    task.delay(4, function()
+        Note:Destroy()
+    end)
+end
+notifyCredit()
+
+-- logic
+local loopEnabled = false
+
+-- find player by name/display
+local function findPlayer(name)
+    name = string.lower(name)
+    for _,p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            if string.find(string.lower(p.Name), name) or string.find(string.lower(p.DisplayName), name) then
+                return p
+            end
+        end
+    end
+    return nil
+end
+
+-- fire once
+FireBtn.MouseButton1Click:Connect(function()
+    local target = findPlayer(TargetBox.Text)
+    if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+        Remote:FireServer(unpack(makeArgs(target)))
+    else
+        TargetBox.Text = "❌ Not found"
+    end
+end)
+
+-- toggle loop
+LoopBtn.MouseButton1Click:Connect(function()
+    loopEnabled = not loopEnabled
+    LoopBtn.Text = loopEnabled and "🔁 Loop Fire: ON" or "🔁 Loop Fire: OFF"
+    LoopBtn.BackgroundColor3 = loopEnabled and Color3.fromRGB(60,200,120) or Color3.fromRGB(80,80,80)
+end)
+
+-- loop thread
+task.spawn(function()
+    while true do
+        task.wait(0.05)
+        if loopEnabled then
+            local delay = tonumber(DelayBox.Text) or 0.2
+            local target = findPlayer(TargetBox.Text)
+            if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+                Remote:FireServer(unpack(makeArgs(target)))
+            end
+            task.wait(delay)
+        end
+    end
+end)
+
+print("[🎯 Gun Remote GUI v4 Loaded! Credits: SE EVICT]")
